@@ -20,7 +20,7 @@ data Direction where
   deriving (Show)
 
 data Position where
-  Position :: { depth :: Int, horizontal :: Int} -> Position
+  Position :: { depth :: Int, horizontal :: Int, aim :: Int} -> Position
   deriving (Show)
 
 parse :: String -> Maybe Direction
@@ -30,14 +30,14 @@ parse direction =
     <|> (stripPrefix "up" direction >>= Just . Up . read @Int)
 
 navigate :: Position -> Direction -> Position
-navigate (Position { horizontal, depth }) direction = case direction of
-  Forward n -> Position { depth, horizontal = horizontal + n }
-  Down n    -> Position { depth = depth + n, horizontal }
-  Up n      -> Position { depth = depth - n, horizontal }
+navigate (Position { horizontal, depth, aim }) direction = case direction of
+  Forward n -> Position { depth = depth + (aim * n), horizontal = horizontal + n, aim }
+  Down n    -> Position { depth, horizontal, aim = aim + n }
+  Up n      -> Position { depth, horizontal, aim = aim - n }
 
 main :: IO ()
 main = do
   directions <- catMaybes <$> inputDirections
-  let end = foldl navigate (Position { depth = 0, horizontal = 0 }) directions in do
+  let end = foldl navigate (Position { depth = 0, horizontal = 0, aim = 0 }) directions in do
     print end
     print $ (depth end) * (horizontal end)
