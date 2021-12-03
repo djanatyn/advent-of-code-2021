@@ -10,3 +10,5 @@ library
     default-extensions: GHC2021 GADTs
     build-depends:
         base ^>= 4.16.0.0,
+        tasty ^>= 1.4.2.1,
+        tasty-hunit ^>= 0.10.0.3,
