@@ -2,10 +2,10 @@
 
 module Day3 where
 
-import Data.List (intersect)
 import Control.Exception (catch)
-import System.Exit (ExitCode(ExitSuccess))
+import Data.List (intersect)
 import Numeric (readBin)
+import System.Exit (ExitCode (ExitSuccess))
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -35,14 +35,13 @@ solve input =
       epsilon = fst . head . readBin $ map (opposite . mostCommon) cols
    in gamma * epsilon
 
-testExample :: Assertion
-testExample = do
+testExample :: TestTree
+testExample = testCase "example" $ do
   example <- lines <$> readFile "../input/day3-example.txt"
   solve example @?= 198
 
 main :: IO ()
-main = catch
-  (defaultMain $ testCase "example" testExample)
-  (\case
+main = catch (defaultMain testExample) $
+  \case
     ExitSuccess -> lines <$> getContents >>= print . solve
-    _ -> return ())
+    _ -> return ()
