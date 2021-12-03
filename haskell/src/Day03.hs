@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Day3 where
+module Day03 where
 
 import Control.Exception (catch)
 import Data.List (intersect)
