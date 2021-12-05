@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Day2 where
+module Day02 where
 
 import Control.Applicative ((<|>))
 import Data.List (stripPrefix)

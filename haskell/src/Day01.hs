@@ -1,6 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Day1 where
+module Day01 where
 
 data RelativeDepth where
   RelativeDepth :: {depth :: Int, increase :: Bool} -> RelativeDepth
