@@ -14,13 +14,13 @@ import Text.ParserCombinators.ReadP
 
 data Board where
   Board :: [[Int]] -> Board
-  deriving (Show)
+  deriving (Show, Eq)
 
 newtype Drawings = Drawings [Int]
   deriving (Show)
 
 newtype WinningSequences = WinningSequences [[Int]]
-  deriving (Show)
+  deriving (Show, Eq)
 
 parseRow :: ReadP [String]
 parseRow = many1 $ do
@@ -102,14 +102,46 @@ solve (Drawings drawings, boards) =
               otherwise -> Solution {drawings = calls, winners = matches}
    in step 0
 
+solve2 :: (Drawings, [Board]) -> ([Int], [(Board, WinningSequences)])
+solve2 (Drawings drawings, boards) =
+  let step :: Int -> ([Int], [(Board, WinningSequences)])
+      step called =
+        let currentCalls :: [Int]
+            currentCalls = take called drawings
+
+            matches :: [Int] -> [(Board, WinningSequences)]
+            matches calls = catMaybes $ fmap (checkBingo $ Drawings calls) boards
+         in case matches currentCalls of
+              [] -> step (called + 1)
+              otherwise ->
+                if (fst <$> matches currentCalls) == boards
+                  then (currentCalls, matches currentCalls \\ matches (take (called - 1) drawings))
+                  else step (called + 1)
+   in step 0
+
+answer2 :: ([Int], [(Board, WinningSequences)]) -> Int
+answer2 (drawings, winners) =
+  let checkLast :: (Board, WinningSequences) -> Bool
+      checkLast (_, WinningSequences seq) = length seq == 1
+   in case filter checkLast winners of
+        [(Board rows, _)] -> let unmatched = join rows \\ drawings
+          in (last drawings) * (sum unmatched)
+        otherwise -> error "failed"
+
 testExample :: TestTree
 testExample = testCase "example" $ do
   parsed <- parse <$> readFile "../input/day4-example.txt"
   answer (solve parsed) @?= 4512
 
+testExample2 :: TestTree
+testExample2 = testCase "example" $ do
+  parsed <- parse <$> readFile "../input/day4-example.txt"
+  answer2 (solve2 parsed) @?= 1924
+
 main :: IO ()
-main = catch (defaultMain $ testGroup "examples" [testExample]) $
+main = catch (defaultMain $ testGroup "examples" [testExample, testExample2]) $
   \case
     ExitSuccess -> do
       answer . solve . parse <$> readFile "../input/day4.txt" >>= print
+      answer2 . solve2 . parse <$> readFile "../input/day4.txt" >>= print
     _ -> return ()
