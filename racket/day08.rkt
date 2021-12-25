@@ -27,21 +27,71 @@
                (entry-output-pattern entry)))])
    (length line)))
 
-(define (check-num-segments num-segments)
-  (cond [(= num-segments 2) '(1)]
-        [(= num-segments 3) '(7)]
-        [(= num-segments 7) '(8)]
-        [(= num-segments 5) '(2 3 5)]
-        [(= num-segments 6) '(0 6 9)]
-        [else (error "invalid input")]))
+(define all-segments (list #\a #\b #\c #\d #\e #\f #\g))
 
-(define initial-mapping
-  '((a . #f)
-    (b . #f)
-    (c . #f)
-    (d . #f)
-    (e . #f)
-    (g . #f)))
+(define (check-length n)
+  (lambda (pattern) (= (string-length pattern) n)))
+
+(define (solve unique-patterns)
+  (letrec ([segments1 (findf (check-length 2) unique-patterns)]
+           [segments7 (findf (check-length 3) unique-patterns)]
+           [a (set-subtract
+               (string->list segments7)
+               (string->list segments1))]
+           [segments4 (findf (check-length 4) unique-patterns)]
+           [segments9?
+            (lambda (segments)
+              (= 1 (length
+                    (set-symmetric-difference
+                     (append a (string->list segments4))
+                     (string->list segments)))))]
+           [segments9 (findf segments9? (filter (check-length 6) unique-patterns))]
+           [e (set-subtract
+               all-segments
+               (append a (string->list segments9)))]
+           [segments8 (findf (check-length 7) unique-patterns)]
+           [g (set-symmetric-difference
+                (string->list segments8)
+                (append e a (string->list segments4)))]
+           [length-6-segments (filter (check-length 6) unique-patterns)]
+           [segments0? (lambda (pattern)
+                         (= 1 (length (set-symmetric-difference
+                                       (string->list pattern)
+                                       (append a e g (string->list segments1))))))]
+           [segments0 (findf segments0? length-6-segments)]
+           [b (set-symmetric-difference
+               (string->list segments0)
+               (append a e g (string->list segments1)))]
+           [segments6? (lambda (pattern)
+                         (= 1 (length (set-subtract
+                                       (string->list segments1)
+                                       (string->list pattern)))))]
+           [segments6 (findf segments6? length-6-segments)]
+           [c (set-subtract
+               (string->list segments1)
+               (string->list segments6))]
+           [d (set-subtract
+               (string->list segments4)
+               (append b (string->list segments1)))]
+           [f (set-subtract
+               all-segments
+               (map first (list a b c d e g)))])
+    `((unique-patterns ,unique-patterns)
+      (a ,a)
+      (b ,b)
+      (c ,c)
+      (d ,d)
+      (e ,e)
+      (f ,f)
+      (g ,g))))
+
+(define example-patterns
+  (solve (entry-unique-patterns (parse-line example-input))))
+
+(define solved
+  (map (lambda (entry) (solve (entry-unique-patterns entry))) parsed-input))
+
+solved
 
 ;; unique number of segments:
 ;; - digit 1 -> 2 segments
@@ -69,14 +119,3 @@
 ;;   - uses {a,b,d,e,f,g}, doesn't use {c}
 ;; - digit 9 -> 6 segments
 ;;   - uses {a,b,c,d,f,g}, doesn't use {e}
-;;
-;; first, look for known digits in examples
-;; we now know 1,4,7,8 digits
-;;
-;; if you know which digits are 1 + 7, you can figure out `a` (difference in segments)
-;; if you know mapping for {a}, and you know which digit is 4, 9 should match 4 (with an extra segment for {a})
-;; if you know what 9's segments (with {a} removed) is, the missing unknown segment is {e}
-;; if you know {e,a}, take them out of the digit 8, you're left with {b,c,d,f,g}
-;; given {b,c,d,f,g}, take difference of 4, now you know mapping for {g}
-;; given mapping for {e,a,g}, missing mappings are {b,c,d,f}
-;; hmm, what's next?
