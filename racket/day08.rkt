@@ -32,28 +32,29 @@
 (define (check-length n)
   (lambda (pattern) (= (string-length pattern) n)))
 
-(define (solve unique-patterns)
-  (letrec ([segments1 (findf (check-length 2) unique-patterns)]
-           [segments7 (findf (check-length 3) unique-patterns)]
+(define (solve entry)
+  (letrec ([patterns (entry-unique-patterns entry)]
+           [segments1 (findf (check-length 2) patterns)]
+           [segments7 (findf (check-length 3) patterns)]
            [a (set-subtract
                (string->list segments7)
                (string->list segments1))]
-           [segments4 (findf (check-length 4) unique-patterns)]
+           [segments4 (findf (check-length 4) patterns)]
            [segments9?
             (lambda (segments)
               (= 1 (length
                     (set-symmetric-difference
                      (append a (string->list segments4))
                      (string->list segments)))))]
-           [segments9 (findf segments9? (filter (check-length 6) unique-patterns))]
+           [segments9 (findf segments9? (filter (check-length 6) patterns))]
            [e (set-subtract
                all-segments
                (append a (string->list segments9)))]
-           [segments8 (findf (check-length 7) unique-patterns)]
+           [segments8 (findf (check-length 7) patterns)]
            [g (set-symmetric-difference
                 (string->list segments8)
                 (append e a (string->list segments4)))]
-           [length-6-segments (filter (check-length 6) unique-patterns)]
+           [length-6-segments (filter (check-length 6) patterns)]
            [segments0? (lambda (pattern)
                          (= 1 (length (set-symmetric-difference
                                        (string->list pattern)
@@ -76,22 +77,53 @@
            [f (set-subtract
                all-segments
                (map first (list a b c d e g)))])
-    `((unique-patterns ,unique-patterns)
-      (a ,a)
-      (b ,b)
-      (c ,c)
-      (d ,d)
-      (e ,e)
-      (f ,f)
-      (g ,g))))
+    `((outputs . ,(entry-output-pattern entry))
+      (patterns ,patterns)
+      (mappings
+       ((,(first a) #\a)
+        (,(first b) #\b)
+        (,(first c) #\c)
+        (,(first d) #\d)
+        (,(first e) #\e)
+        (,(first f) #\f)
+        (,(first g) #\g))))))
 
 (define example-patterns
-  (solve (entry-unique-patterns (parse-line example-input))))
+  (solve (parse-line example-input)))
 
 (define solved
-  (map (lambda (entry) (solve (entry-unique-patterns entry))) parsed-input))
+  (for/list ([entry parsed-input]) (solve entry)))
 
-solved
+(define (map-char mappings char)
+  (first (dict-ref mappings char)))
+
+(define (interpret solution)
+ (for/list ([entry solution])
+   (for/list ([output (dict-ref entry 'outputs)])
+     (list->string
+      (for/list ([char (string->list output)])
+        (map-char (first (dict-ref entry 'mappings)) char))))))
+
+(define (translate word)
+  (match (list->string (sort (string->list word) char<?))
+    ["abcefg" 0]
+    ["cf" 1]
+    ["acdeg" 2]
+    ["acdfg" 3]
+    ["bcdf" 4]
+    ["abdfg" 5]
+    ["abdefg" 6]
+    ["acf" 7]
+    ["abcdefg" 8]
+    ["abcdfg" 9]
+    [_ (error "failed: ~a" word)]))
+
+(for/sum ([entry (interpret solved)])
+  (string->number
+   (for/fold
+       ([str ""])
+       ([digit (map number->string (for/list ([word entry]) (translate word)))])
+       (string-append str digit))))
 
 ;; unique number of segments:
 ;; - digit 1 -> 2 segments
