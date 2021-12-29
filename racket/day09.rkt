@@ -107,13 +107,25 @@
            [next-accumulated-points (cons current-point accumulated-points)]
            [next-steps (filter
                         (lambda (point)
-                          (continue? heightmap next-accumulated-points current-point point))
+                          (continue?
+                           heightmap
+                           next-accumulated-points
+                           current-point
+                           point))
                         neighbor-coords)])
     (cond
       [(empty? next-steps) (list current-point)]
       [else (list
              current-point
-             (map (lambda (coord) (step (+ depth 1 ) height width heightmap next-accumulated-points coord)) next-steps))])))
+             (map (lambda (coord)
+                    (step
+                     (+ depth 1)
+                     height
+                     width
+                     heightmap
+                     next-accumulated-points
+                     coord))
+                  next-steps))])))
 
 (define basin-lengths
   (letrec ([input (parse day9-input)]
