@@ -86,5 +86,47 @@
             [width (vector-length (vector-ref input 0))])
      (low-points input width height))))
 
-(for/sum ([low-point solution-low-points])
-  (+ 1 (char->number (evaluation-value low-point))))
+(define part1-solution
+ (for/sum ([low-point solution-low-points])
+   (+ 1 (char->number (evaluation-value low-point)))))
+
+(define (continue? heightmap accumulated-points previous-point next-point)
+  "Check to see if next-point is part of basin."
+  (and
+   ;; don't retread previous coordinates
+   (not (member next-point accumulated-points))
+   ;; point must be higher than before
+   (>
+    (char->number (get next-point heightmap))
+    (char->number (get previous-point heightmap)))
+   ;; basins are bordered by 9 high points, and must be smaller
+   (> 9 (char->number (get next-point heightmap)))))
+
+(define (step depth height width heightmap accumulated-points current-point)
+  (letrec ([neighbor-coords (adjacent-coords current-point height width)]
+           [next-accumulated-points (cons current-point accumulated-points)]
+           [next-steps (filter
+                        (lambda (point)
+                          (continue? heightmap next-accumulated-points current-point point))
+                        neighbor-coords)])
+    (cond
+      [(empty? next-steps) (list current-point)]
+      [else (list
+             current-point
+             (map (lambda (coord) (step (+ depth 1 ) height width heightmap next-accumulated-points coord)) next-steps))])))
+
+(define basin-lengths
+  (letrec ([input (parse day9-input)]
+           [height (vector-length input)]
+           [width (vector-length (vector-ref input 0))])
+    (for/list ([low-point solution-low-points])
+      (length
+       (remove-duplicates
+        (flatten
+         (step 0 height width input (list) (evaluation-location low-point))))))))
+
+(define part2-solution
+  (apply * (take (sort (flatten basin-lengths) >) 3)))
+
+(format "part 1 solution: ~a" part1-solution)
+(format "part 2 solution: ~a" part2-solution)
