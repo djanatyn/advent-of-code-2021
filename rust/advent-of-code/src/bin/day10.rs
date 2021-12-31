@@ -1,3 +1,5 @@
+/// TODO: All you need is a stack, BracketCount can be simplified. All fields besides "scope" aren't required.
+
 use std::io;
 use std::io::Read;
 
@@ -90,13 +92,26 @@ fn read(mut reader: BracketCount, input: char) -> Result<BracketCount, Bracket> 
     }
 }
 
-fn score(error: Bracket) -> u64 {
+fn score(error: &Bracket) -> u64 {
     match error {
         Bracket::Paren => 3,
         Bracket::Square => 57,
         Bracket::Curly => 1197,
         Bracket::Angle => 25137,
     }
+}
+
+fn score_part2(leftovers: Vec<Bracket>) -> u64 {
+    leftovers.iter().fold(0, |acc, bracket| {
+        let addition = match bracket {
+            Bracket::Paren => 1,
+            Bracket::Square => 2,
+            Bracket::Curly => 3,
+            Bracket::Angle => 4,
+        };
+        // println!("({} * 5) + {} ({:?})", acc, addition, bracket);
+        (acc * 5) + addition
+    })
 }
 
 #[allow(unused)]
@@ -107,7 +122,22 @@ fn problem1(line: &str) -> Option<u64> {
 
     match balance {
         Ok(_) => None,
-        Err(bracket) => Some(score(bracket)),
+        Err(bracket) => Some(score(&bracket)),
+    }
+}
+
+#[allow(unused)]
+fn problem2(line: &str) -> Option<u64> {
+    let balance = line
+        .chars()
+        .try_fold(INIT_BRACKET_COUNT, |count, c| read(count, c));
+
+    match balance {
+        Err(bracket) => None,
+        Ok(BracketCount { mut scope, .. }) => {
+            scope.reverse();
+            Some(score_part2(scope))
+        }
     }
 }
 
@@ -124,15 +154,37 @@ fn main() -> io::Result<()> {
         .filter_map(|score| score)
         .sum();
 
-    println!("example: {:?}", example_answers);
+    println!("example part 1: {:?}", example_answers);
 
-    let problem1_answer: u64 = buf
+    let problem1_answer: u64 = buf.lines().map(problem1).filter_map(|score| score).sum();
+
+    println!("part 1: {:?}", problem1_answer);
+
+    let mut example_part2_answers = example
         .lines()
-        .map(problem1)
-        .filter_map(|score| score)
-        .sum();
+        .map(problem2)
+        .filter_map(|leftovers| leftovers)
+        .collect::<Vec<_>>();
 
-    println!("problem 1: {:?}", problem1_answer);
+    example_part2_answers.sort();
+
+    println!(
+        "example part 2: {}",
+        example_part2_answers[(example_part2_answers.len() - 1) / 2]
+    );
+
+    let mut problem2_answers = buf
+        .lines()
+        .map(problem2)
+        .filter_map(|leftovers| leftovers)
+        .collect::<Vec<_>>();
+
+    problem2_answers.sort();
+
+    println!(
+        "part 2: {}",
+        problem2_answers[(problem2_answers.len() - 1) / 2]
+    );
 
     Ok(())
 }
