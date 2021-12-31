@@ -1,4 +1,3 @@
-/// TODO: All you need is a stack, BracketCount can be simplified. All fields besides "scope" aren't required.
 use std::io;
 use std::io::Read;
 
