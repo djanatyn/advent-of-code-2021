@@ -1,5 +1,4 @@
 /// TODO: All you need is a stack, BracketCount can be simplified. All fields besides "scope" aren't required.
-
 use std::io;
 use std::io::Read;
 
@@ -14,76 +13,42 @@ enum Bracket {
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct BracketCount {
     scope: Vec<Bracket>,
-    paren: i64,
-    square: i64,
-    curly: i64,
-    angle: i64,
 }
 
-const INIT_BRACKET_COUNT: BracketCount = BracketCount {
-    scope: vec![],
-    paren: 0,
-    square: 0,
-    curly: 0,
-    angle: 0,
-};
+const INIT_BRACKET_COUNT: BracketCount = BracketCount { scope: vec![] };
 
 fn read(mut reader: BracketCount, input: char) -> Result<BracketCount, Bracket> {
     match input {
         '(' => {
             reader.scope.push(Bracket::Paren);
-            Ok(BracketCount {
-                paren: reader.paren + 1,
-                ..reader
-            })
+            Ok(reader)
         }
         ')' => match reader.scope.pop() {
-            None | Some(Bracket::Paren) => Ok(BracketCount {
-                paren: reader.paren - 1,
-                ..reader
-            }),
+            None | Some(Bracket::Paren) => Ok(reader),
             _ => Err(Bracket::Paren),
         },
         '{' => {
             reader.scope.push(Bracket::Curly);
-            Ok(BracketCount {
-                curly: reader.curly + 1,
-                ..reader
-            })
+            Ok(reader)
         }
         '}' => match reader.scope.pop() {
-            None | Some(Bracket::Curly) => Ok(BracketCount {
-                curly: reader.curly - 1,
-                ..reader
-            }),
+            None | Some(Bracket::Curly) => Ok(reader),
             _ => Err(Bracket::Curly),
         },
         '[' => {
             reader.scope.push(Bracket::Square);
-            Ok(BracketCount {
-                square: reader.square + 1,
-                ..reader
-            })
+            Ok(reader)
         }
         ']' => match reader.scope.pop() {
-            None | Some(Bracket::Square) => Ok(BracketCount {
-                square: reader.square - 1,
-                ..reader
-            }),
+            None | Some(Bracket::Square) => Ok(reader),
             _ => Err(Bracket::Square),
         },
         '<' => {
             reader.scope.push(Bracket::Angle);
-            Ok(BracketCount {
-                angle: reader.angle + 1,
-                ..reader
-            })
+            Ok(reader)
         }
         '>' => match reader.scope.pop() {
-            None | Some(Bracket::Angle) => Ok(BracketCount {
-                angle: reader.angle - 1,
-                ..reader
-            }),
+            None | Some(Bracket::Angle) => Ok(reader),
             _ => Err(Bracket::Angle),
         },
         _ => {
@@ -101,6 +66,18 @@ fn score(error: &Bracket) -> u64 {
     }
 }
 
+#[allow(unused)]
+fn problem1(line: &str) -> Option<u64> {
+    let balance = line
+        .chars()
+        .try_fold(INIT_BRACKET_COUNT, |count, c| read(count, c));
+
+    match balance {
+        Ok(_) => None,
+        Err(bracket) => Some(score(&bracket)),
+    }
+}
+
 fn score_part2(leftovers: Vec<Bracket>) -> u64 {
     leftovers.iter().fold(0, |acc, bracket| {
         let addition = match bracket {
@@ -112,18 +89,6 @@ fn score_part2(leftovers: Vec<Bracket>) -> u64 {
         // println!("({} * 5) + {} ({:?})", acc, addition, bracket);
         (acc * 5) + addition
     })
-}
-
-#[allow(unused)]
-fn problem1(line: &str) -> Option<u64> {
-    let balance = line
-        .chars()
-        .try_fold(INIT_BRACKET_COUNT, |count, c| read(count, c));
-
-    match balance {
-        Ok(_) => None,
-        Err(bracket) => Some(score(&bracket)),
-    }
 }
 
 #[allow(unused)]
