@@ -108,13 +108,10 @@ fn next_flash(step: &Step) -> Vec<Coord> {
 
 /// Flash octopi, updating `flashed` field, returning a new Step.
 fn flash(before: &Step, mut to_flash: Vec<Coord>) -> Step {
-    let mut flashed = before.flashed.clone();
-    flashed.append(&mut to_flash);
-
     let mut grid = before.grid.clone();
-    for coord @ Coord { x, y } in to_flash {
-        let octopi_x = usize::try_from(x).unwrap();
-        let octopi_y = usize::try_from(y).unwrap();
+    for coord @ Coord { x, y } in &to_flash {
+        let octopi_x = usize::try_from(*x).unwrap();
+        let octopi_y = usize::try_from(*y).unwrap();
 
         grid.octopi[octopi_y][octopi_x] -= 9;
 
@@ -125,6 +122,9 @@ fn flash(before: &Step, mut to_flash: Vec<Coord>) -> Step {
             grid.octopi[neighbor_y][neighbor_x] += 1;
         }
     }
+
+    let mut flashed = before.flashed.clone();
+    flashed.append(&mut to_flash);
 
     Step { flashed, grid }
 }
