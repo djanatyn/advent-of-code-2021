@@ -56,12 +56,12 @@ fn parse(input: &str) -> Grid {
 }
 
 /// Determine whether a coordinate is valid (within the grid).
-fn valid_coord(coord: Coord, height: i8, width: i8) -> bool {
-    (coord.y >= 0) & (coord.x >= 0) & (coord.y <= height) & (coord.x <= width)
+fn valid_coord(coord: &Coord, grid: &Grid) -> bool {
+    (coord.y >= 0) & (coord.x >= 0) & (coord.y <= grid.height) & (coord.x <= grid.width)
 }
 
 /// Return the Moore neighborhood of a coordinate.
-fn neighbors(coord: Coord, grid: Grid) -> Vec<Coord> {
+fn neighbors(coord: &Coord, grid: &Grid) -> Vec<Coord> {
     let directions = vec![
         Coord { x: 0, y: 1 },   // north
         Coord { x: 0, y: -1 },  // south
@@ -75,23 +75,62 @@ fn neighbors(coord: Coord, grid: Grid) -> Vec<Coord> {
 
     directions
         .iter()
-        .map(|offset| coord + *offset)
-        .filter(|potential| valid_coord(*potential, grid.height, grid.width))
+        .map(|offset| *coord + *offset)
+        .filter(|potential| valid_coord(potential, grid))
         .collect()
 }
 
 /// Determine which octopi should be flashed next (>= 9 energy).
-fn next_flash(step: Step) -> Vec<Coord> {
-    todo!()
+fn next_flash(step: &Step) -> Vec<Coord> {
+    step.grid
+        .octopi
+        .iter()
+        .enumerate()
+        .map(|(y, row)| {
+            row.iter()
+                .enumerate()
+                .map(move |(x, octopus)| {
+                    if *octopus >= 9 {
+                        Some(Coord {
+                            x: x.try_into().unwrap(),
+                            y: y.try_into().unwrap(),
+                        })
+                    } else {
+                        None
+                    }
+                })
+                .filter_map(|coord| coord)
+        })
+        .flatten()
+        .filter(|coord| !step.flashed.contains(coord))
+        .collect()
 }
 
 /// Flash octopi, updating `flashed` field, returning a new Step.
-fn flash(before: Step, to_flash: Vec<Coord>) -> Step {
-    todo!()
+fn flash(before: &Step, mut to_flash: Vec<Coord>) -> Step {
+    let mut flashed = before.flashed.clone();
+    flashed.append(&mut to_flash);
+
+    let mut grid = before.grid.clone();
+    for coord @ Coord { x, y } in to_flash {
+        let octopi_x = usize::try_from(x).unwrap();
+        let octopi_y = usize::try_from(y).unwrap();
+
+        grid.octopi[octopi_y][octopi_x] -= 9;
+
+        for neighbor in neighbors(&coord, &grid) {
+            let neighbor_x = usize::try_from(neighbor.x).unwrap();
+            let neighbor_y = usize::try_from(neighbor.y).unwrap();
+
+            grid.octopi[neighbor_y][neighbor_x] += 1;
+        }
+    }
+
+    Step { flashed, grid }
 }
 
 /// Increment every octopus energy level.
-fn increment(before: Step) -> Step {
+fn increment(before: &Step) -> &Step {
     todo!()
 }
 
