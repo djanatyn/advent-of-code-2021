@@ -196,6 +196,14 @@ fn reset_flashed(before: &Step) -> Step {
     };
 
     println!("this round i flashed {}", before.flashed.len());
+
+    if i64::try_from(before.flashed.len()).unwrap()
+        == (before.grid.width * before.grid.height).into()
+    {
+        println!("that's every octopus.");
+        std::process::exit(0);
+    }
+
     let total_flashed = before.total_flashed + i64::try_from(before.flashed.len()).unwrap();
     println!("{} flashed", total_flashed);
 
@@ -212,8 +220,8 @@ fn main() -> io::Result<()> {
     let mut stdin = io::stdin();
     stdin.read_to_string(&mut buf)?;
 
-    // let grid = parse(&buf);
-    let grid = parse(include_str!("example-day11.txt"));
+    let grid = parse(&buf);
+    // let grid = parse(include_str!("example-day11.txt"));
     let flashed = vec![];
     let start = Step {
         grid,
@@ -222,7 +230,7 @@ fn main() -> io::Result<()> {
     };
 
     let mut next = start;
-    for step in 0..10 {
+    for step in 0..1000 {
         println!("step {}", step + 1);
         next = increment(&next);
 
