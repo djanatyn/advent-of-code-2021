@@ -20,7 +20,7 @@ impl Add for Coord {
     }
 }
 
-fn display(grid: &Grid) -> () {
+fn display(grid: &Grid) {
     let output = grid.octopi.iter().map(|row| {
         row.iter()
             .fold(String::new(), |a, b| format!("{} {}", a, b))
@@ -112,7 +112,7 @@ fn next_flash(step: &Step) -> Vec<Coord> {
                         None
                     }
                 })
-                .filter_map(|coord| coord)
+                .flatten()
         })
         .flatten()
         .filter(|coord| !step.flashed.contains(coord))
@@ -126,7 +126,7 @@ fn flash(before: &Step, mut to_flash: Vec<Coord>) -> Step {
         let octopi_x = usize::try_from(*x).unwrap();
         let octopi_y = usize::try_from(*y).unwrap();
 
-        for neighbor in neighbors(&coord, &grid) {
+        for neighbor in neighbors(coord, &grid) {
             let neighbor_x = usize::try_from(neighbor.x).unwrap();
             let neighbor_y = usize::try_from(neighbor.y).unwrap();
 
@@ -180,7 +180,7 @@ fn reset_flashed(before: &Step) -> Step {
         let x = usize::try_from(coord.x).unwrap();
         let y = usize::try_from(coord.y).unwrap();
 
-        if before.flashed.contains(&coord) {
+        if before.flashed.contains(coord) {
             octopi[y][x] = 0;
         };
     });
