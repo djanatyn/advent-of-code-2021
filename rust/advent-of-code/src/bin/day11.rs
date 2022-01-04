@@ -20,6 +20,17 @@ impl Add for Coord {
     }
 }
 
+fn display(grid: &Grid) -> () {
+    let output = grid.octopi.iter().map(|row| {
+        row.iter()
+            .fold(String::new(), |a, b| format!("{} {}", a, b))
+    });
+
+    for line in output {
+        println!("{}", line);
+    }
+}
+
 /// A two-dimensional grid of octopi, each represented by energy level.
 #[derive(Debug, Clone)]
 struct Grid {
@@ -29,9 +40,11 @@ struct Grid {
 }
 
 /// When evaluating each step, we keep track of what we've already flashed.
+#[derive(Debug)]
 struct Step {
     grid: Grid,
     flashed: Vec<Coord>,
+    total_flashed: i64,
 }
 
 /// Parse input into a two-dimensional grid.
@@ -57,7 +70,7 @@ fn parse(input: &str) -> Grid {
 
 /// Determine whether a coordinate is valid (within the grid).
 fn valid_coord(coord: &Coord, grid: &Grid) -> bool {
-    (coord.y >= 0) & (coord.x >= 0) & (coord.y <= grid.height) & (coord.x <= grid.width)
+    (coord.y >= 0) & (coord.x >= 0) & (coord.y < grid.height) & (coord.x < grid.width)
 }
 
 /// Return the Moore neighborhood of a coordinate.
@@ -90,7 +103,7 @@ fn next_flash(step: &Step) -> Vec<Coord> {
             row.iter()
                 .enumerate()
                 .map(move |(x, octopus)| {
-                    if *octopus >= 9 {
+                    if *octopus > 9 {
                         Some(Coord {
                             x: x.try_into().unwrap(),
                             y: y.try_into().unwrap(),
@@ -113,33 +126,85 @@ fn flash(before: &Step, mut to_flash: Vec<Coord>) -> Step {
         let octopi_x = usize::try_from(*x).unwrap();
         let octopi_y = usize::try_from(*y).unwrap();
 
-        grid.octopi[octopi_y][octopi_x] -= 9;
-
         for neighbor in neighbors(&coord, &grid) {
             let neighbor_x = usize::try_from(neighbor.x).unwrap();
             let neighbor_y = usize::try_from(neighbor.y).unwrap();
 
             grid.octopi[neighbor_y][neighbor_x] += 1;
         }
+
+        grid.octopi[octopi_y][octopi_x] -= 9;
     }
 
     let mut flashed = before.flashed.clone();
     flashed.append(&mut to_flash);
+    let total_flashed = before.total_flashed;
 
-    Step { flashed, grid }
+    Step {
+        flashed,
+        grid,
+        total_flashed,
+    }
 }
 
 /// Increment every octopus energy level.
-fn increment(before: &Step) -> &Step {
-    todo!()
+fn increment(before: &Step) -> Step {
+    let octopi = before
+        .grid
+        .octopi
+        .iter()
+        .map(|row| row.iter().map(|octopus| octopus + 1).collect::<Vec<i8>>())
+        .collect::<Vec<_>>();
+
+    let flashed = before.flashed.clone();
+    let total_flashed = before.total_flashed;
+    let height = before.grid.height;
+    let width = before.grid.width;
+    let grid = Grid {
+        octopi,
+        height,
+        width,
+    };
+
+    Step {
+        grid,
+        flashed,
+        total_flashed,
+    }
 }
 
-// given a Step, (containing already-flashed coords, and a grid),
-// first increment every octopi. next,
-// check for next flashes (not doing already-flashed coords),
-// if there are no next flashes, the step is complete
-// if there are flashes, flash them, returning a new Step, updating already-flashed,
-// repeat until step complete
+fn reset_flashed(before: &Step) -> Step {
+    let mut octopi: Vec<Vec<i8>> = before.grid.octopi.clone();
+
+    before.flashed.iter().for_each(|coord| {
+        let x = usize::try_from(coord.x).unwrap();
+        let y = usize::try_from(coord.y).unwrap();
+
+        if before.flashed.contains(&coord) {
+            octopi[y][x] = 0;
+        };
+    });
+
+    let flashed = vec![];
+    let height = before.grid.height;
+    let width = before.grid.width;
+
+    let grid = Grid {
+        octopi,
+        height,
+        width,
+    };
+
+    println!("this round i flashed {}", before.flashed.len());
+    let total_flashed = before.total_flashed + i64::try_from(before.flashed.len()).unwrap();
+    println!("{} flashed", total_flashed);
+
+    Step {
+        grid,
+        flashed,
+        total_flashed,
+    }
+}
 
 fn main() -> io::Result<()> {
     // read stdin
@@ -147,7 +212,37 @@ fn main() -> io::Result<()> {
     let mut stdin = io::stdin();
     stdin.read_to_string(&mut buf)?;
 
-    todo!();
+    // let grid = parse(&buf);
+    let grid = parse(include_str!("example-day11.txt"));
+    let flashed = vec![];
+    let start = Step {
+        grid,
+        flashed,
+        total_flashed: 0,
+    };
+
+    let mut next = start;
+    for step in 0..10 {
+        println!("step {}", step + 1);
+        next = increment(&next);
+
+        let mut to_flash = next_flash(&next);
+        if to_flash.is_empty() {
+            display(&next.grid);
+            continue;
+        } else {
+            while !to_flash.is_empty() {
+                next = flash(&next, to_flash);
+                to_flash = next_flash(&next);
+            }
+        }
+
+        next.flashed.dedup();
+        next = reset_flashed(&next);
+        display(&next.grid);
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
