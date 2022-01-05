@@ -1,3 +1,4 @@
+use image::{Rgb, RgbImage};
 use std::io;
 use std::io::Read;
 use std::ops::Add;
@@ -45,6 +46,40 @@ struct Step {
     grid: Grid,
     flashed: Vec<Coord>,
     total_flashed: i64,
+}
+
+fn save_image(grid: &Grid, path: &str) -> image::RgbImage {
+    let width = u32::try_from(grid.width).unwrap();
+    let height = u32::try_from(grid.height).unwrap();
+    let mut img = RgbImage::new(width, height);
+
+    for (octopi_y, row) in grid.octopi.iter().enumerate() {
+        for (octopi_x, octopi) in row.iter().enumerate() {
+            let color = match octopi {
+                0 => Rgb([0, 191, 255]),
+                1 => Rgb([52, 176, 243]),
+                2 => Rgb([71, 161, 232]),
+                3 => Rgb([82, 146, 220]),
+                4 => Rgb([90, 130, 209]),
+                5 => Rgb([96, 115, 197]),
+                6 => Rgb([99, 100, 186]),
+                7 => Rgb([102, 85, 175]),
+                8 => Rgb([102, 68, 164]),
+                9 => Rgb([102, 51, 153]),
+                _ => panic!("invalid octopi color"),
+            };
+
+            let x = u32::try_from(octopi_x).unwrap();
+            let y = u32::try_from(octopi_y).unwrap();
+
+            img.put_pixel(x, y, color);
+        }
+    }
+
+    println!("saving to {path}");
+    img.save(path);
+
+    img
 }
 
 /// Parse input into a two-dimensional grid.
@@ -237,6 +272,7 @@ fn main() -> io::Result<()> {
         let mut to_flash = next_flash(&next);
         if to_flash.is_empty() {
             display(&next.grid);
+            save_image(&next.grid, format!("grid_{step}.png").as_str());
             continue;
         } else {
             while !to_flash.is_empty() {
@@ -248,6 +284,7 @@ fn main() -> io::Result<()> {
         next.flashed.dedup();
         next = reset_flashed(&next);
         display(&next.grid);
+        save_image(&next.grid, format!("grid_{step}.png").as_str());
     }
 
     Ok(())
